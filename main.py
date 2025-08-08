@@ -4,7 +4,9 @@ Main execution script for the DTRC (Drone-Truck Routing Coordination) system
 from file_utils import read_cvrp_file
 from distance_utils import distance_matrix_from_xy
 from clustering_utils import i_k_means
-from drone_utils import apply_dtrc, optimize_drone_takeoff_landing, calculate_total_cost
+from dtrc_algorithm import apply_dtrc
+from drone_optimization import optimize_drone_takeoff_landing
+from cost_calculation import calculate_total_cost
 from visualization_utils import plot_truck_routes, plot_combined_routes, plot_google_maps_visualization
 
 
