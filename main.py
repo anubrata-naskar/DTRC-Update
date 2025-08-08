@@ -6,6 +6,7 @@ from distance_utils import distance_matrix_from_xy
 from clustering_utils import i_k_means
 from dtrc_algorithm import apply_dtrc
 from drone_optimization import optimize_drone_takeoff_landing
+from advanced_drone_optimization import optimize_drone_takeoff_landing_advanced
 from cost_calculation import calculate_total_cost
 from visualization_utils import plot_truck_routes, plot_combined_routes, plot_google_maps_visualization
 
@@ -27,9 +28,20 @@ def main():
     distances_df = distance_matrix_from_xy(lat_coords, lon_coords, use_google_maps=True)
     drone_routes, modified_truck_routes = apply_dtrc(truck_routes, distances_df, demands, d_capacity, lat_coords, lon_coords)
 
-    print("Optimizing drone takeoff and landing points...")
-    drone_routes = optimize_drone_takeoff_landing(modified_truck_routes, drone_routes, 
-                                                           distances_df, lat_coords, lon_coords, demands)
+    print("Optimizing drone takeoff and landing points with advanced route analysis...")
+    
+    # Choice between basic and advanced optimization
+    use_advanced_optimization = True  # Set to False for basic optimization
+    
+    if use_advanced_optimization:
+        drone_routes = optimize_drone_takeoff_landing_advanced(
+            modified_truck_routes, drone_routes, distances_df, 
+            lat_coords, lon_coords, demands,
+            truck_speed=1.0, drone_speed=1.5
+        )
+    else:
+        drone_routes = optimize_drone_takeoff_landing(modified_truck_routes, drone_routes, 
+                                                     distances_df, lat_coords, lon_coords, demands)
     print("-----Modified Truck routes-----")
     for route in modified_truck_routes:
         print([int(x) for x in route])
