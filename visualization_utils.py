@@ -204,6 +204,7 @@ def plot_combined_routes(truck_routes, all_drone_routes, lat_coords, lon_coords)
 
 def plot_google_maps_visualization(truck_routes, all_drone_routes, lat_coords, lon_coords):
     from folium.features import DivIcon
+    from google_maps_cache import get_cache_instance
     
     truck_colors = ['blue', 'green', 'purple', 'brown', 'orange']
     drone_colors = ['red', 'lime', 'magenta', 'chocolate', 'gold']
@@ -212,6 +213,9 @@ def plot_google_maps_visualization(truck_routes, all_drone_routes, lat_coords, l
     center_lon = sum(lon_coords) / len(lon_coords)
     
     m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    
+    # Get cache instance for Google Maps API calls
+    cache = get_cache_instance()
     
     for idx, route in enumerate(truck_routes):
         truck_color = truck_colors[idx % len(truck_colors)]
