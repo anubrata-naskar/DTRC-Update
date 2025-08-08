@@ -2,6 +2,10 @@
 File utilities for reading CVRP files and configuration
 """
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def dynamic_battery_model(remaining_payload, distance_traveled=0):
