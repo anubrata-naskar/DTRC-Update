@@ -1,0 +1,26 @@
+-----Modified Truck routes-----
+[0, 20, 9, 3, 0]
+[0, 27, 16, 12, 32, 0]
+[0, 23, 0]
+[0, 17, 19, 7, 13, 1, 0]
+[0, 29, 11, 0]
+[0, 26, 8, 0]
+-----Drone routes-----
+[[[['V(44.926624,49.097221)', np.int64(2), 'V(66.009362,84.006241)']], [['V(47.052363,52.617976)', np.int64(15), 'V(66.952319,84.634879)']]], [[['V(29.093126,22.994047)', np.int64(28), np.int64(25), 'V(14.998984,0.000653)'], ['V(1.000000,9.936881)', np.int64(21), np.int64(10), 'V(2.217483,43.610406)']], [['V(30.339563,25.027708)', np.int64(30), 'V(14.979943,0.012894)']]], [[['V(39.397611,28.777454)', np.int64(31), 'V(69.563704,16.356122)'], ['V(50.168857,24.342235)', np.int64(24), 'V(69.738539,16.284131)']], []], [[['V(33.239931,32.942397)', np.int64(5), 'V(45.010984,70.984622)'], ['V(31.919217,36.317557)', np.int64(6), np.int64(18), 'V(32.784974,60.617228)'], ['V(50.000000,57.900819)', np.int64(14), 'V(40.772050,45.775383)']], []], [[], []], [[['V(75.114476,41.278619)', np.int64(22), np.int64(4), 'V(89.973469,45.050409)']], []]]
+Only truck cost -  765.9133941464846
+Truck 0 drone operational cost: 9.0
+Truck 0 waiting cost: 1.3499999999999999
+Truck 1 drone operational cost: 16.5
+Truck 1 waiting cost: 2.475
+Truck 2 drone operational cost: 9.0
+Truck 2 waiting cost: 1.3499999999999999
+Truck 3 drone operational cost: 15.0
+Truck 3 waiting cost: 2.25
+Truck 4 drone operational cost: 0.0
+Truck 4 waiting cost: 0.0
+Truck 5 drone operational cost: 6.0
+Truck 5 waiting cost: 0.8999999999999999
+Drone operational cost: 55.5
+Waiting cost: 8.325
+Total Cost: 765.9133941464846
+Delivery Cost: 843.3414471660906
