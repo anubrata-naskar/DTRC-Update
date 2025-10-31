@@ -3,6 +3,7 @@ Main execution script for the DTRC (Drone-Truck Routing Coordination) system usi
 """
 import os
 import glob
+import time
 import matplotlib.pyplot as plt
 from file_utils import read_cvrp_file
 from distance_utils import distance_matrix_from_xy
@@ -18,6 +19,9 @@ def process_vrp_file(file_path, results_dir):
     """
     Process a single VRP file and save the results to the results directory
     """
+    # Start timing the algorithm
+    start_time = time.time()
+    
     base_filename = os.path.basename(file_path).split('.')[0]
     print(f"\nProcessing {base_filename}...")
     
@@ -131,36 +135,75 @@ def process_vrp_file(file_path, results_dir):
     cost_summary += f"Total Cost: {total_cost}\n"
     cost_summary += f"Delivery Cost: {delivery_cost}\n"
     
+    # Calculate total runtime
+    end_time = time.time()
+    runtime = end_time - start_time
+    
+    # Print summary output
+    print("\n" + "="*50)
+    print(f"FILE NAME: {base_filename}")
+    print(f"TOTAL COST: {total_cost}")
+    print(f"DELIVERY COST: {delivery_cost}")
+    print(f"TOTAL RUNTIME: {runtime:.4f} seconds")
+    print("="*50)
+    
     print(cost_summary)
     
     # Save results to text file
-    results_text = modified_truck_routes_str + drone_routes_str + cost_summary
+    runtime_info = f"\nRUNTIME: {runtime:.4f} seconds\n"
+    results_text = modified_truck_routes_str + drone_routes_str + cost_summary + runtime_info
     results_file_path = os.path.join(results_dir, f"{base_filename}_results.txt")
     with open(results_file_path, 'w') as f:
         f.write(results_text)
+    
+    return base_filename, total_cost, delivery_cost, runtime
 
 
 def main():
     """
-    Process all VRP files in the euclidean_version directory
+    Process VRP files - either a specific file input by user or all files in directory
     """
     # Create results directory if it doesn't exist
     current_dir = os.path.dirname(os.path.abspath(__file__))
     results_dir = os.path.join(current_dir, "results")
     os.makedirs(results_dir, exist_ok=True)
     
-    # Find all VRP files in the euclidean_version directory only
-    vrp_files = glob.glob(os.path.join(current_dir, "*.vrp"))
+    # Ask user for filename
+    filename = input("Enter VRP filename (or press Enter to process all files): ").strip()
     
-    if not vrp_files:
-        print("No VRP files found. Please make sure VRP files are in the euclidean_version directory.")
-        return
-    
-    print(f"Found {len(vrp_files)} VRP files: {[os.path.basename(f) for f in vrp_files]}")
-    
-    # Process each VRP file
-    for file_path in vrp_files:
-        process_vrp_file(file_path, results_dir)
+    if filename:
+        # Process specific file
+        if not filename.endswith('.vrp'):
+            filename += '.vrp'
+        
+        file_path = os.path.join(current_dir, filename)
+        
+        if not os.path.exists(file_path):
+            print(f"File {filename} not found in {current_dir}")
+            # List available VRP files
+            available_files = glob.glob(os.path.join(current_dir, "*.vrp"))
+            if available_files:
+                print("Available VRP files:")
+                for f in available_files:
+                    print(f"  - {os.path.basename(f)}")
+            return
+        
+        print(f"Processing single file: {filename}")
+        base_filename, total_cost, delivery_cost, runtime = process_vrp_file(file_path, results_dir)
+        
+    else:
+        # Process all VRP files
+        vrp_files = glob.glob(os.path.join(current_dir, "*.vrp"))
+        
+        if not vrp_files:
+            print("No VRP files found. Please make sure VRP files are in the euclidean_version directory.")
+            return
+        
+        print(f"Found {len(vrp_files)} VRP files: {[os.path.basename(f) for f in vrp_files]}")
+        
+        # Process each VRP file
+        for file_path in vrp_files:
+            base_filename, total_cost, delivery_cost, runtime = process_vrp_file(file_path, results_dir)
     
     print(f"\nAll results saved to: {results_dir}")
 
