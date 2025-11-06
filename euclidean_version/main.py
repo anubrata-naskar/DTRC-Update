@@ -11,6 +11,7 @@ from clustering_utils import i_k_means
 from dtrc_algorithm import apply_dtrc
 from drone_optimization import optimize_drone_takeoff_landing
 from advanced_drone_optimization import optimize_drone_takeoff_landing_advanced
+from zero_waiting_optimization import optimize_for_zero_waiting, verify_zero_waiting
 from cost_calculation import calculate_total_cost
 from visualization_utils import plot_truck_routes, plot_combined_routes
 
@@ -70,11 +71,116 @@ def process_vrp_file(file_path, results_dir):
     else:
         drone_routes = optimize_drone_takeoff_landing(modified_truck_routes, drone_routes, 
                                                      distances_df, lat_coords, lon_coords, demands)
-    print("-----Modified Truck routes-----")
+    
+    # Print current routes and costs BEFORE zero-waiting optimization
+    print("\n" + "="*60)
+    print("BEFORE ZERO-WAITING OPTIMIZATION")
+    print("="*60)
+    
+    for truck_idx, truck_route in enumerate(modified_truck_routes):
+        # Calculate truck route cost
+        truck_cost = sum(distances_df.iloc[truck_route[i], truck_route[i+1]] 
+                        for i in range(len(truck_route) - 1))
+        truck_cost += distances_df.iloc[truck_route[-1], 0]  # Return to depot
+        
+        # Calculate drone costs for this truck
+        drone_cost = 0
+        drone_routes_count = 0
+        if truck_idx < len(drone_routes):
+            for drone_route_list in drone_routes[truck_idx]:
+                for route in drone_route_list:
+                    if route and len(route) >= 2:
+                        drone_routes_count += 1
+                        drone_cost += 2 + (len(route) * 0.1)
+        
+        total_truck_cost = truck_cost + drone_cost
+        
+        print(f"\nTruck {truck_idx}:")
+        print(f"  Route: {[int(x) for x in truck_route]}")
+        print(f"  Truck travel cost: {truck_cost:.4f}")
+        print(f"  Drone operations cost: {drone_cost:.4f}")
+        print(f"  Number of drone deliveries: {drone_routes_count}")
+        print(f"  Total cost: {total_truck_cost:.4f}")
+        if truck_idx < len(drone_routes) and any(drone_routes[truck_idx]):
+            print(f"  Drone routes: {drone_routes[truck_idx]}")
+    
+    print("="*60 + "\n")
+    
+    # Apply zero-waiting optimization
+    drone_routes = optimize_for_zero_waiting(
+        modified_truck_routes, drone_routes, distances_df,
+        lat_coords, lon_coords, demands,
+        truck_speed=1.0, drone_speed=1.5
+    )
+
+    total_waiting = verify_zero_waiting(
+        modified_truck_routes, drone_routes, distances_df,
+        lat_coords, lon_coords, truck_speed=1.0, drone_speed=1.5
+    )
+    print(f"\nTotal waiting time after optimization: {total_waiting:.4f}")
+    
+    # Print final routes and costs for each truck after zero-waiting optimization
+    print("\n" + "="*60)
+    print("FINAL ROUTES AND COSTS AFTER ZERO-WAITING OPTIMIZATION")
+    print("="*60)
+    
+    for truck_idx, truck_route in enumerate(modified_truck_routes):
+        # Calculate truck route cost
+        truck_cost = sum(distances_df.iloc[truck_route[i], truck_route[i+1]] 
+                        for i in range(len(truck_route) - 1))
+        truck_cost += distances_df.iloc[truck_route[-1], 0]  # Return to depot
+        
+        # Calculate drone costs for this truck
+        drone_cost = 0
+        drone_routes_count = 0
+        if truck_idx < len(drone_routes):
+            for drone_route_list in drone_routes[truck_idx]:
+                for route in drone_route_list:
+                    if route and len(route) >= 2:
+                        drone_routes_count += 1
+                        # Fixed cost + distance cost
+                        drone_cost += 2 + (len(route) * 0.1)
+        
+        # Total cost for this truck
+        total_truck_cost = truck_cost + drone_cost
+        
+        print(f"\nTruck {truck_idx}:")
+        print(f"  Route: {[int(x) for x in truck_route]}")
+        print(f"  Truck travel cost: {truck_cost:.4f}")
+        print(f"  Drone operations cost: {drone_cost:.4f}")
+        print(f"  Number of drone deliveries: {drone_routes_count}")
+        print(f"  Total cost: {total_truck_cost:.4f}")
+        
+        # Print drone routes for this truck
+        if truck_idx < len(drone_routes) and any(drone_routes[truck_idx]):
+            print(f"  Drone routes: {drone_routes[truck_idx]}")
+    
+    print("="*60 + "\n")
+    
+    # Save combined routes plot
+    combined_plot_path = os.path.join(results_dir, f"{base_filename}_combined_routes.png")
+    plot_combined_routes(modified_truck_routes, drone_routes, lat_coords, lon_coords, save_path=combined_plot_path)
+
+    total_cost, delivery_cost = calculate_total_cost(modified_truck_routes, drone_routes, distances_df, lat_coords, lon_coords)
+    
+    # Calculate total runtime
+    end_time = time.time()
+    runtime = end_time - start_time
+    
+    # Print final summary output
+    print("\n" + "="*60)
+    print("FINAL SUMMARY")
+    print("="*60)
+    print(f"FILE NAME: {base_filename}")
+    print(f"TOTAL COST: {total_cost}")
+    print(f"DELIVERY COST: {delivery_cost}")
+    print(f"TOTAL RUNTIME: {runtime:.4f} seconds")
+    print("="*60)
+    
+    # Prepare data for saving to file
     modified_truck_routes_str = "-----Modified Truck routes-----\n"
     for route in modified_truck_routes:
         route_str = str([int(x) for x in route])
-        print(route_str)
         modified_truck_routes_str += route_str + "\n"
 
     formatted_drone_routes = []
@@ -93,64 +199,12 @@ def process_vrp_file(file_path, results_dir):
             truck_formatted.append(drone_formatted)
         formatted_drone_routes.append(truck_formatted)
 
-    print("-----Drone routes-----")
     drone_routes_str = "-----Drone routes-----\n"
     drone_routes_str += str(formatted_drone_routes) + "\n"
-    print(formatted_drone_routes)
-
-    # Save combined routes plot
-    combined_plot_path = os.path.join(results_dir, f"{base_filename}_combined_routes.png")
-    plot_combined_routes(modified_truck_routes, drone_routes, lat_coords, lon_coords, save_path=combined_plot_path)
-
-    total_cost, delivery_cost = calculate_total_cost(modified_truck_routes, drone_routes, distances_df, lat_coords, lon_coords)
-    
-    # Calculate individual truck costs
-    truck_costs = []
-    truck_drone_operational_costs = []
-    truck_waiting_costs = []
-    
-    # Generate cost summary
-    cost_summary = f"Only truck cost -  {total_cost}\n"
-    truck_index = 0
-    total_drone_operational_cost = 0
-    total_waiting_cost = 0
-    
-    for truck_idx, truck_drone_routes in enumerate(drone_routes):
-        drone_operational_cost = 0
-        waiting_cost = 0
-        
-        # In a real implementation, you would calculate these costs from the routes
-        # This is a simplified version to match the requested output format
-        drone_operational_cost = sum([len(route) for trips in truck_drone_routes for route in trips]) * 1.5
-        waiting_cost = drone_operational_cost * 0.15
-        
-        total_drone_operational_cost += drone_operational_cost
-        total_waiting_cost += waiting_cost
-        
-        cost_summary += f"Truck {truck_idx} drone operational cost: {drone_operational_cost}\n"
-        cost_summary += f"Truck {truck_idx} waiting cost: {waiting_cost}\n"
-    
-    cost_summary += f"Drone operational cost: {total_drone_operational_cost}\n"
-    cost_summary += f"Waiting cost: {total_waiting_cost}\n"
-    cost_summary += f"Total Cost: {total_cost}\n"
-    cost_summary += f"Delivery Cost: {delivery_cost}\n"
-    
-    # Calculate total runtime
-    end_time = time.time()
-    runtime = end_time - start_time
-    
-    # Print summary output
-    print("\n" + "="*50)
-    print(f"FILE NAME: {base_filename}")
-    print(f"TOTAL COST: {total_cost}")
-    print(f"DELIVERY COST: {delivery_cost}")
-    print(f"TOTAL RUNTIME: {runtime:.4f} seconds")
-    print("="*50)
-    
-    print(cost_summary)
     
     # Save results to text file
-    runtime_info = f"\nRUNTIME: {runtime:.4f} seconds\n"
+    cost_summary = f"Total Cost: {total_cost}\nDelivery Cost: {delivery_cost}\n"
+    runtime_info = f"RUNTIME: {runtime:.4f} seconds\n"
     results_text = modified_truck_routes_str + drone_routes_str + cost_summary + runtime_info
     results_file_path = os.path.join(results_dir, f"{base_filename}_results.txt")
     with open(results_file_path, 'w') as f:
